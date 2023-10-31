@@ -1,0 +1,74 @@
+﻿
+@page "/deviceinfo"
+@using MauiHybrid.Data
+@using MauiHybrid.Helpers
+@using System.Text.Json
+
+<h1>Internet status</h1>
+
+<p role="status"><b>@internetStatus</b></p>
+
+<h1>Orientation</h1>
+
+<p role="status"><b>@orientationStatus</b></p>
+
+@code {
+    private string internetStatus { get; set; }
+    private string orientationStatus { get; set; }
+    private List<WeatherForecast> items { get; set; }
+
+    private async Task Save()
+    {
+        var contents = JsonSerializer.Serialize(items);
+        var path = Path.Combine(FileSystem.AppDataDirectory, "todo.json");
+        File.WriteAllText(path, contents);
+        await App.Current.MainPage.DisplayAlert("List Saved", $"List has been saved to {path}", "OK");
+    }
+
+    private void Load()
+    {
+        var path = Path.Combine(FileSystem.AppDataDirectory, "todo.json");
+        if (!File.Exists(path))
+            return;
+        var contents = File.ReadAllText(path);
+        items = JsonSerializer.Deserialize<List<WeatherForecast>>(contents);
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var accessType = Connectivity.Current.NetworkAccess;
+        switch (accessType)
+        {
+            case NetworkAccess.Internet:
+                internetStatus = "Internet connection available";
+                break;
+            case NetworkAccess.None:
+                internetStatus = "Internet connection unavailable";
+                break;
+            case NetworkAccess.ConstrainedInternet:
+                internetStatus = "Internet connection limited";
+                break;
+            default:
+                internetStatus = "Info not available";
+                break;
+
+        }
+
+        var orientation = new DeviceOrientationService().GetOrientation();
+        switch (orientation)
+        {
+            case DeviceOrientation.Portrait:
+                orientationStatus = "Portrait";
+                break;
+            case DeviceOrientation.Landscape:
+                orientationStatus = "Landscape";
+                break;
+            case DeviceOrientation.Undefined:
+                orientationStatus = "Unknown";
+                break;
+
+        }
+    }
+}
